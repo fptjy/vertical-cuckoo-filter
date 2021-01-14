@@ -1,2 +1,2 @@
-# cuckoo-filter
-cuckoo filter and its variants
+# vertial-cuckoo-filter
+vertical cuckoo filter and its variants
