@@ -3,12 +3,14 @@ Exceptions module
 """
 
 
-class CuckooFilterFullException(Exception):
+class VCF_FullException(Exception):
     """
     Exception raised when filter is full.
     """
     pass
 
-
-# import os
-# print(os.getcwd())#获取当前工作目录
+class D_VCF_cannot_relocate_Exception(Exception):
+    """
+    Exception raised when the number of re-locate operations has reached the threshold .
+    """
+    pass
