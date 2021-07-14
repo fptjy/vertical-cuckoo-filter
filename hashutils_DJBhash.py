@@ -8,8 +8,6 @@ import numpy as np
 
 
 
-
-
 # Daniel J. Bernstein hash function
 def DJBHash(key, N):
     hashDJB = 0

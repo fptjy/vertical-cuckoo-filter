@@ -4,9 +4,9 @@ Cuckoo Filter
 
 import random
 
-import bucket   # 相对导入from . import bucket这种导入方式会报错
+import bucket  # 相对导入from . import bucket这种导入方式会报错
 import exceptions
-import hashutils
+import hashutils_DJBhash
 
 
 class CuckooFilter(object):
@@ -16,8 +16,8 @@ class CuckooFilter(object):
     Implements insert, delete and contains operations for the filter.
     """
 
-    def __init__(self, capacity, bucket_size=4, fingerprint_size=14,
-                 max_displacements=500):
+    def __init__(self, capacity, bucket_size=4, fingerprint_size=13,
+                 max_displacements=50):
         """
         Initialize CuckooFilter object.
 
@@ -34,9 +34,9 @@ class CuckooFilter(object):
         self.buckets = [bucket.Bucket(size=bucket_size)
                         for _ in range(self.capacity)]
         self.size = 0
-        self.kicks = 0  #自己写的，用来获取踢出重放次数
+        # self.kicks = 0  #自己写的，用来获取踢出重放次数
 
-    def __repr__(self):        # 重写__repr__()，定义打印class的信息
+    def __repr__(self):  # 重写__repr__()，定义打印class的信息
         return '<CuckooFilter: capacity=' + str(self.capacity) + \
                ', size=' + str(self.size) + ', fingerprint size=' + \
                str(self.fingerprint_size) + ' byte(s)>'
@@ -48,11 +48,11 @@ class CuckooFilter(object):
         return self.contains(item)
 
     def _get_index(self, item):
-        index = hashutils.hash_code(item) % self.capacity
+        index = hashutils_DJBhash.hash_code(item) % self.capacity
         return index
 
     def _get_alternate_index(self, index, fingerprint):
-        alt_index = (index ^ hashutils.hash_code(fingerprint)) % self.capacity
+        alt_index = (index ^ hashutils_DJBhash.hash_code(fingerprint)) % self.capacity
         return alt_index
 
     def insert(self, item):
@@ -63,28 +63,28 @@ class CuckooFilter(object):
         :return: True if insert is successful; CuckooFilterFullException if
         filter is full.
         """
-        fingerprint = hashutils.fingerprint(item, self.fingerprint_size)
+        fingerprint = hashutils_DJBhash.fingerprint(item, self.fingerprint_size)
         i = self._get_index(item)
         j = self._get_alternate_index(i, fingerprint)
 
         if self.buckets[i].insert(fingerprint) \
                 or self.buckets[j].insert(fingerprint):
             self.size += 1
-            return True
+            return "yes"
 
         eviction_index = random.choice([i, j])
         for _ in range(self.max_displacements):
-            self.kicks += 1
             f = self.buckets[eviction_index].swap(fingerprint)
             eviction_index = self._get_alternate_index(eviction_index, f)
             if self.buckets[eviction_index].insert(f):
                 self.size += 1
-                return True
-            fingerprint = f    # 我自己感觉fingerprint没有改变，有问题，然后我加上了这行代码
+                return "yes"
+            fingerprint = f  # 我自己感觉fingerprint没有改变，有问题，然后我加上了这行代码
         # Filter is full
-        return self.size, self.kicks
+        result = [eviction_index, fingerprint]
+        return result
 
-        #raise exceptions.CuckooFilterFullException('Insert operation failed. '
+        # raise exceptions.CuckooFilterFullException('Insert operation failed. '
         #                                           'Filter is full.')
 
     def contains(self, item):
@@ -94,11 +94,16 @@ class CuckooFilter(object):
         :param item: Item to check its presence in the filter.
         :return: True, if item is in the filter; False, otherwise.
         """
-        fingerprint = hashutils.fingerprint(item, self.fingerprint_size)
+        fingerprint = hashutils_DJBhash.fingerprint(item, self.fingerprint_size)
         i = self._get_index(item)
+        if fingerprint in self.buckets[i]:
+            return True
         j = self._get_alternate_index(i, fingerprint)
+        if fingerprint in self.buckets[j]:
+            return True
+        return False
 
-        return fingerprint in self.buckets[i] or fingerprint in self.buckets[j]
+        # return fingerprint in self.buckets[i] or fingerprint in self.buckets[j]
 
     def delete(self, item):
         """
@@ -111,7 +116,7 @@ class CuckooFilter(object):
         :param item: Item to delete from the filter.
         :return: True, if item is found and deleted; False, otherwise.
         """
-        fingerprint = hashutils.fingerprint(item, size=self.fingerprint_size)
+        fingerprint = hashutils_DJBhash.fingerprint(item, size=self.fingerprint_size)
         i = self._get_index(item)
         j = self._get_alternate_index(i, fingerprint)
         if self.buckets[i].delete(fingerprint) \
