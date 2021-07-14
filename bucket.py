@@ -5,7 +5,7 @@ class Bucket(object):
 
     def __init__(self, size=4):
         self.size = size
-        self.bucket = []
+        self.bucket = [-1 for i in range(size)]
 
     def __repr__(self):
         return '<Bucket: ' + str(self.bucket) + '>'
@@ -22,8 +22,8 @@ class Bucket(object):
         :param item:
         :return:
         """
-        if not self.is_full():
-            self.bucket.append(item)
+        if self.is_not_full():
+            self.bucket[self.bucket.index(-1)] = item
             return True
         return False
 
@@ -34,13 +34,13 @@ class Bucket(object):
         :return:
         """
         try:
-            del self.bucket[self.bucket.index(item)]
+            self.bucket[self.bucket.index(item)] = -1
             return True
         except ValueError:
             return False
 
-    def is_full(self):
-        return len(self.bucket) == self.size
+    def is_not_full(self):
+        return -1 in self.bucket
 
     def swap(self, item):
         """
@@ -49,7 +49,7 @@ class Bucket(object):
         :param item:
         :return:
         """
-        index = random.choice(range(len(self.bucket))) # 从桶中四个槽中随机选一个
+        index = random.choice(range(len(self.bucket)))
         swapped_item = self.bucket[index]
         self.bucket[index] = item
         return swapped_item
